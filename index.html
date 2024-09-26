@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure My Wallet - Crypto Wallet Protection</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary-blue: #1e3a8a;
+            --light-blue: #3b82f6;
+            --accent-yellow: #fbbf24;
+            --text-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(45deg, var(--primary-blue), var(--light-blue), var(--accent-yellow));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-white);
+            line-height: 1.6;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 0;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: space-around;
+            list-style-type: none;
+        }
+
+        nav ul li a {
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+        }
+
+        nav ul li a:hover {
+            color: var(--accent-yellow);
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .glassmorphism:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            background: var(--accent-yellow);
+            color: var(--primary-blue);
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        button:hover {
+            background: var(--light-blue);
+            color: var(--text-white);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature {
+            text-align: center;
+        }
+
+        .testimonials {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .testimonial {
+            flex-basis: calc(33.333% - 1rem);
+            margin-bottom: 1rem;
+        }
+
+        .image-container {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .responsive-image {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .testimonial {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <section id="home" class="hero glassmorphism">
+                <h1>Prevent Fraud</h1>
+                <p>Secure your crypto wallet</p>
+                <a href="secure.html">
+                    <button>🛡️ Activate protection</button>
+                </a>
+            </section>
+                <div class="image-container">
+                    <img src="https://content.bitsgap.com/content/images/2023/06/CNC-745.png" alt="Secure Your Crypto: Wallets" class="responsive-image">
+                </div>
+            </section>
+
+            <section id="how-it-works" class="glassmorphism">
+                <h2>How does it work?</h2>
+                <p>Our site ensures the protection of your wallet against any unauthorized transfer, according to the duration you define during configuration. Thus, your funds are secured, and no unauthorized operation is possible, ensuring you never lose your assets.</p>
+                <div class="image-container">
+                    <img src="https://assets.kpmg.com/is/image/kpmg/pink-blue-spectrum-banner:cq5dam.web.2000.500" alt="Diagram illustrating the wallet protection process" class="responsive-image">
+                </div>
+            </section>
+
+            <section id="features" class="features">
+                <div class="feature glassmorphism">
+                    <h3>Active Protection</h3>
+                    <p>No fund transfers possible</p>
+                    <div class="image-container">
+                        <img src="https://cdn3d.iconscout.com/3d/premium/thumb/cryptocurrency-wallet-3d-icon-download-in-png-blend-fbx-gltf-file-formats--crypto-coins-coin-investment-pack-business-icons-7066792.png?f=webp" alt="Active Protection icon" class="feature-icon">
+                    </div>
+                </div>
+                <div class="feature glassmorphism">
+                    <h3>Maximum Security</h3>
+                    <p>Prevent losses</p>
+                    <div class="image-container">
+                        <img src="https://static.vecteezy.com/system/resources/previews/023/887/194/original/crypto-security-3d-cryptocurrency-investment-icon-png.png" alt="Maximum Security icon" class="feature-icon">
+                    </div>
+                </div>
+                <div class="feature glassmorphism">
+                    <h3>Easy to Use</h3>
+                    <p>Simple and quick activation</p>
+                    <div class="image-container">
+                        <img src="https://static.vecteezy.com/system/resources/previews/013/391/058/original/bitcoin-security-3d-illustration-free-png.png" alt="Easy to Use icon" class="feature-icon">
+                    </div>
+                </div>
+            </section>
+
+            <section id="testimonials" class="testimonials">
+                <div class="testimonial glassmorphism">
+                    <p>"Great! It's one of the best applications I've ever used."</p>
+                    <p>- Julien Bere, Trust Wallet</p>
+                </div>
+                <div class="testimonial glassmorphism">
+                    <p>"Activating the protection is simple and quick. I've never been so at ease with my digital assets. Top service!"</p>
+                    <p>- Lea Garcia, Coinbase Wallet</p>
+                </div>
+                <div class="testimonial glassmorphism">
+                    <p>"Since I've been using this service, my funds are safe from any malicious attempt. It's a peace of mind that everyone should have."</p>
+                    <p>- Jeremy Dos Santos, Metamask</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 SecureMyWallet. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
